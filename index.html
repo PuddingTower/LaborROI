@@ -1,337 +1,199 @@
-import React, { useState, useMemo } from 'react';
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LaborROI - 这个B班值不值得上</title>
+    <!-- 引入 Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 React 核心库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <!-- 引入 Babel 转换 JSX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <div id="root"></div>
 
-// --- 配置字典 (Dictionaries) ---
-const FACTOR_OPTIONS = {
-  education: [
-    { label: '专科及以下 (系数: 0.8)', value: 0.8 },
-    { label: '普通本科 (系数: 1.0)', value: 1.0 },
-    { label: '高级本科/211/985 (系数: 1.2)', value: 1.2 },
-    { label: '普通硕士 (系数: 1.4)', value: 1.4 },
-    { label: '高级硕士 (系数: 1.6)', value: 1.6 },
-    { label: '普通博士 (系数: 1.8)', value: 1.8 },
-    { label: '高级博士 (系数: 2.0)', value: 2.0 },
-  ],
-  environment: [
-    { label: '偏僻地区/工地/艰苦户外 (系数: 0.8)', value: 0.8 },
-    { label: '普通工厂/外包 (系数: 0.9)', value: 0.9 },
-    { label: '普通写字楼 (系数: 1.0)', value: 1.0 },
-    { label: '核心CBD/体制内 (系数: 1.1)', value: 1.1 },
-  ],
-  oppositeSex: [
-    { label: '周围基本同性/无吸引力 (系数: 0.9)', value: 0.9 },
-    { label: '男女均衡/正常水平 (系数: 1.0)', value: 1.0 },
-    { label: '高颜值异性极多 (系数: 1.1)', value: 1.1 },
-  ],
-  colleagues: [
-    { label: '勾心斗角/甩锅极多 (系数: 0.9)', value: 0.9 },
-    { label: '基本是普通同事 (系数: 1.0)', value: 1.0 },
-    { label: '团队极其优秀/互帮互助 (系数: 1.05)', value: 1.05 },
-  ],
-  // 新增：精神内耗/压力指标（将情绪劳动量化为等效工作时间）
-  mentalPressure: [
-    { label: '轻松愉快/自由度高 (耗时 -1h)', value: -1.0 },
-    { label: '正常工作压力 (耗时 +0h)', value: 0 },
-    { label: '轻度PUA/微观管理 (耗时 +1.5h)', value: 1.5 },
-    { label: '重度PUA/高压职场 (耗时 +3h)', value: 3.0 },
-  ],
-  // 新增：基于宏观经济学的城市能级购买力平价 (PPP) 指标
-  regionTier: [
-    { label: '一线城市 (北上广深) - 基准物价', value: 1.0 },
-    { label: '新一线/强二线 (杭蓉汉等) - 购买力乘数 1.2', value: 1.2 },
-    { label: '普通二/三线城市 - 购买力乘数 1.4', value: 1.4 },
-    { label: '四线及以下/县城 - 购买力乘数 1.7', value: 1.7 },
-  ]
-};
+    <script type="text/babel">
+        const { useState, useMemo } = React;
 
-export default function App() {
-  // --- 状态管理 (State Management) ---
-  const [formData, setFormData] = useState({
-    monthlyPreTax: 15000,
-    housingFundRate: 7, // 公积金缴纳比例(%)
-    workDaysPerMonth: 21.75, // 法定月计薪天数
-    workHours: 9,
-    commuteHours: 1.5,
-    slackHours: 2,
-    education: 1.0,
-    environment: 1.0,
-    oppositeSex: 1.0,
-    colleagues: 1.0,
-    mentalPressure: 0,
-    regionTier: 1.0, // 默认一线城市
-    earlyStart: false // 8:30前上班
-  });
+        const FACTOR_OPTIONS = {
+            education: [
+                { label: '专科及以下 (系数: 0.8)', value: 0.8 },
+                { label: '普通本科 (系数: 1.0)', value: 1.0 },
+                { label: '高级本科/211/985 (系数: 1.2)', value: 1.2 },
+                { label: '普通硕士 (系数: 1.4)', value: 1.4 },
+                { label: '高级硕士 (系数: 1.6)', value: 1.6 },
+                { label: '普通博士 (系数: 1.8)', value: 1.8 },
+                { label: '高级博士 (系数: 2.0)', value: 2.0 },
+            ],
+            environment: [
+                { label: '偏僻地区/工地 (系数: 0.8)', value: 0.8 },
+                { label: '普通工厂/外包 (系数: 0.9)', value: 0.9 },
+                { label: '普通写字楼 (系数: 1.0)', value: 1.0 },
+                { label: '核心CBD/体制内 (系数: 1.1)', value: 1.1 },
+            ],
+            oppositeSex: [
+                { label: '周围基本同性 (系数: 0.9)', value: 0.9 },
+                { label: '男女均衡 (系数: 1.0)', value: 1.0 },
+                { label: '高颜值异性极多 (系数: 1.1)', value: 1.1 },
+            ],
+            colleagues: [
+                { label: '勾心斗角 (系数: 0.9)', value: 0.9 },
+                { label: '基本普通 (系数: 1.0)', value: 1.0 },
+                { label: '团队优秀 (系数: 1.05)', value: 1.05 },
+            ],
+            mentalPressure: [
+                { label: '轻松愉快 (耗时 -1h)', value: -1.0 },
+                { label: '正常压力 (耗时 +0h)', value: 0 },
+                { label: '轻度PUA (耗时 +1.5h)', value: 1.5 },
+                { label: '重度PUA (耗时 +3h)', value: 3.0 },
+            ],
+            regionTier: [
+                { label: '一线城市 (基准 1.0)', value: 1.0 },
+                { label: '新一线 (乘数 1.2)', value: 1.2 },
+                { label: '二/三线 (乘数 1.4)', value: 1.4 },
+                { label: '四线及以下 (乘数 1.7)', value: 1.7 },
+            ]
+        };
 
-  // --- 输入处理 (Event Handlers) ---
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : parseFloat(value) || 0
-    }));
-  };
+        function App() {
+            const [formData, setFormData] = useState({
+                monthlyPreTax: 15000,
+                housingFundRate: 7,
+                workDaysPerMonth: 21.75,
+                workHours: 9,
+                commuteHours: 1.5,
+                slackHours: 2,
+                education: 1.0,
+                environment: 1.0,
+                oppositeSex: 1.0,
+                colleagues: 1.0,
+                mentalPressure: 0,
+                regionTier: 1.0,
+                earlyStart: false
+            });
 
-  // --- 核心算法推理引擎 (Core Calculation Engine) ---
-  const analysisResult = useMemo(() => {
-    const {
-      monthlyPreTax, housingFundRate, workDaysPerMonth,
-      workHours, commuteHours, slackHours,
-      education, environment, oppositeSex, colleagues,
-      mentalPressure, regionTier, earlyStart
-    } = formData;
+            const handleInputChange = (e) => {
+                const { name, value, type, checked } = e.target;
+                setFormData(prev => ({
+                    ...prev,
+                    [name]: type === 'checkbox' ? checked : parseFloat(value) || 0
+                }));
+            };
 
-    // 0. 净收入预估模型 (Net Income Estimation)
-    // 五险个人部分预估 (养老8%, 医疗2%, 失业0.5%) = 10.5%
-    const socialInsuranceRate = 0.105;
-    const fundRate = (parseFloat(housingFundRate) || 0) / 100;
-    const deductions = monthlyPreTax * (socialInsuranceRate + fundRate);
-    
-    // 简易月度个税模型 (扣除5000起征点，采用现行7级超额累进税率)
-    let taxableIncome = monthlyPreTax - deductions - 5000;
-    let tax = 0;
-    if (taxableIncome > 0) {
-      if (taxableIncome <= 3000) tax = taxableIncome * 0.03;
-      else if (taxableIncome <= 12000) tax = taxableIncome * 0.1 - 210;
-      else if (taxableIncome <= 25000) tax = taxableIncome * 0.2 - 1410;
-      else if (taxableIncome <= 35000) tax = taxableIncome * 0.25 - 2660;
-      else if (taxableIncome <= 55000) tax = taxableIncome * 0.3 - 4410;
-      else if (taxableIncome <= 80000) tax = taxableIncome * 0.35 - 7160;
-      else tax = taxableIncome * 0.45 - 15160;
-    }
-    
-    const netMonthlyIncome = monthlyPreTax - deductions - tax;
-    // 防御性除零保护
-    const dailySalary = workDaysPerMonth > 0 ? (netMonthlyIncome / workDaysPerMonth) : 0;
+            const result = useMemo(() => {
+                const { monthlyPreTax, housingFundRate, workDaysPerMonth, workHours, commuteHours, slackHours, education, environment, oppositeSex, colleagues, mentalPressure, regionTier, earlyStart } = formData;
+                
+                const socialInsuranceRate = 0.105;
+                const fundRate = housingFundRate / 100;
+                const deductions = monthlyPreTax * (socialInsuranceRate + fundRate);
+                
+                let taxableIncome = Math.max(0, monthlyPreTax - deductions - 5000);
+                let tax = 0;
+                if (taxableIncome <= 3000) tax = taxableIncome * 0.03;
+                else if (taxableIncome <= 12000) tax = taxableIncome * 0.1 - 210;
+                else if (taxableIncome <= 25000) tax = taxableIncome * 0.2 - 1410;
+                else tax = taxableIncome * 0.25 - 2660; // 简化版个税逻辑
 
-    // 0.1 真实时薪与购买力平价模型 (True Hourly Wage & PPP Model)
-    // 真实物理耗时：只计算被企业强制占用的物理时间（工作+通勤），不计入精神内耗虚拟时间
-    const truePhysicalHours = workHours + commuteHours;
-    const actualHourlyWage = truePhysicalHours > 0 ? (dailySalary / truePhysicalHours) : 0;
-    // 购买力平价时薪：根据当地物价水平折算后的等效购买力
-    const pppHourlyWage = actualHourlyWage * regionTier;
+                const netIncome = monthlyPreTax - deductions - tax;
+                const dailySalary = netIncome / workDaysPerMonth;
+                const actualHourlyWage = dailySalary / (workHours + commuteHours);
+                const pppHourlyWage = actualHourlyWage * regionTier;
 
-    // 1. 收益模块 (Return)
-    const envGain = environment * oppositeSex * colleagues;
-    const totalReturn = dailySalary * envGain;
+                let effectiveTime = (workHours - slackHours) + (commuteHours * 1.5) + mentalPressure + (earlyStart ? 0.5 : 0);
+                effectiveTime = Math.max(0.1, effectiveTime);
 
-    // 2. 成本模块 (Cost)
-    // 修正：通勤时间的疲劳系数设为 1.5，摸鱼时间全额抵扣（不乘以0.5）
-    let effectiveTime = (workHours - slackHours) + (commuteHours * 1.5) + mentalPressure;
-    
-    // 边界条件防御：防止有效时间小于等于0导致除以0异常
-    if (effectiveTime <= 0) effectiveTime = 0.1;
+                const totalReturn = dailySalary * (environment * oppositeSex * colleagues);
+                const totalCost = effectiveTime * education * 35;
+                const score = totalReturn / totalCost;
 
-    // 引入早起睡眠剥夺惩罚 (平滑处理：相当于额外增加 0.5 小时疲劳时间)
-    if (earlyStart) {
-      effectiveTime += 0.5;
-    }
+                let assessment = { level: 'B', color: 'text-blue-600', bg: 'bg-blue-50', text: '等价交换。' };
+                if (score < 0.8) assessment = { level: 'C', color: 'text-red-600', bg: 'bg-red-50', text: '极度剥削，建议准备简历。' };
+                else if (score >= 1.5 && score < 2.0) assessment = { level: 'A', color: 'text-emerald-600', bg: 'bg-emerald-50', text: '优质资产，建议长期持有。' };
+                else if (score >= 2.0) assessment = { level: 'S', color: 'text-purple-600', bg: 'bg-purple-50', text: '神仙岗位，击败99%的打工人。' };
 
-    const totalCost = effectiveTime * education * 35; // 35为原版量纲常数
+                return { score: score.toFixed(3), assessment, metrics: { dailySalary: dailySalary.toFixed(0), pppHourlyWage: pppHourlyWage.toFixed(1), effectiveTime: effectiveTime.toFixed(1) } };
+            }, [formData]);
 
-    // 3. 最终综合指数 (CUI)
-    const score = totalCost > 0 ? (totalReturn / totalCost) : 0;
+            return (
+                <div className="max-w-4xl mx-auto py-8 px-4">
+                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+                        <div className="p-6 bg-slate-900 text-white">
+                            <h1 className="text-2xl font-extrabold tracking-tight">LaborROI <span className="text-slate-400 font-normal text-base ml-2">v2.1</span></h1>
+                            <p className="text-slate-400 text-sm mt-1">基于购买力平价(PPP)与物理守恒逻辑的工作效用分析</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
+                            <div className="space-y-6">
+                                <div>
+                                    <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">核心投入产出数据</h2>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs text-slate-500 mb-1">税前月薪 (¥)</label>
+                                            <input type="number" name="monthlyPreTax" value={formData.monthlyPreTax} onChange={handleInputChange} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-slate-500 mb-1">通勤总时长 (h)</label>
+                                            <input type="number" name="commuteHours" value={formData.commuteHours} onChange={handleInputChange} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                                        </div>
+                                    </div>
+                                </div>
 
-    // 4. 学术级定性评估 (Qualitative Assessment)
-    let assessment = { level: '', color: '', text: '' };
-    if (score < 0.8) {
-      assessment = { level: 'C 类 / 极度剥削', color: 'text-red-600', bg: 'bg-red-100', text: '此工作实质上是对劳动者生命周期的净消耗。建议立即准备简历或开启静默离职模式。' };
-    } else if (score >= 0.8 && score < 1.5) {
-      assessment = { level: 'B 类 / 正常交易', color: 'text-blue-600', bg: 'bg-blue-100', text: '符合市场规律的等价交换。无显著的附加剥削，也无超额剩余价值获取。' };
-    } else if (score >= 1.5 && score < 2.0) {
-      assessment = { level: 'A 类 / 优质资产', color: 'text-green-600', bg: 'bg-green-100', text: '具备较高的边际收益率，环境或待遇存在显著正向溢价，建议长期持有该岗位。' };
-    } else {
-      assessment = { level: 'S 类 / 顶级复利', color: 'text-purple-600', bg: 'bg-purple-100', text: '稀缺的神仙级岗位。您的投入产出比已击败 99% 的系统内齿轮，请低调行事。' };
-    }
+                                <div>
+                                    <label className="block text-xs text-slate-500 mb-2">精神内耗与管理压力</label>
+                                    <select name="mentalPressure" value={formData.mentalPressure} onChange={handleInputChange} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm outline-none">
+                                        {FACTOR_OPTIONS.mentalPressure.map(opt => <option key={opt.label} value={opt.value}>{opt.label}</option>)}
+                                    </select>
+                                </div>
 
-    return {
-      score: score.toFixed(3),
-      assessment,
-      metrics: {
-        actualDailySalary: dailySalary.toFixed(1),
-        actualHourlyWage: actualHourlyWage.toFixed(1),
-        pppHourlyWage: pppHourlyWage.toFixed(1),
-        totalReturn: totalReturn.toFixed(1),
-        effectiveTime: effectiveTime.toFixed(1)
-      }
-    };
-  }, [formData]);
+                                <div>
+                                    <label className="block text-xs text-slate-500 mb-2">所在城市能级 (PPP权重)</label>
+                                    <select name="regionTier" value={formData.regionTier} onChange={handleInputChange} className="w-full bg-emerald-50 border border-emerald-100 text-emerald-900 rounded-lg p-2 text-sm outline-none">
+                                        {FACTOR_OPTIONS.regionTier.map(opt => <option key={opt.label} value={opt.value}>{opt.label}</option>)}
+                                    </select>
+                                </div>
 
-  // --- 渲染组件 (Render) ---
-  return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
-      <div className="max-w-5xl mx-auto space-y-6">
-        
-        {/* Header */}
-        <header className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
-            工作效用指数评估系统 <span className="text-sm font-normal text-gray-500 ml-2">v2.0 Rigorous Edition</span>
-          </h1>
-          <p className="text-gray-500 mt-2 text-sm">
-            基于修正后的多维边际效用理论，引入「情绪劳动成本」与「通勤折损率」，提供严谨的职场 ROI 定量分析。
-          </p>
-        </header>
+                                <div className="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                    <input type="checkbox" name="earlyStart" checked={formData.earlyStart} onChange={handleInputChange} className="w-4 h-4 text-blue-600 rounded" />
+                                    <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">强制早起 (8:30前上班)</span>
+                                </div>
+                            </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Left Column: Inputs */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* Section 1: 定量硬指标 */}
-            <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <h2 className="text-lg font-semibold border-b pb-3 mb-5 flex items-center">
-                <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                基础耗时与收益指标
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">税前月薪 (元/月)</label>
-                  <input type="number" name="monthlyPreTax" value={formData.monthlyPreTax} onChange={handleInputChange} className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" />
+                            <div className="bg-slate-50 rounded-xl p-6 flex flex-col items-center justify-center text-center border border-slate-100">
+                                <span className="text-xs font-bold text-slate-400 uppercase mb-2">综合效用指数 (CUI)</span>
+                                <div className={`text-7xl font-black ${result.assessment.color} mb-4 tracking-tighter`}>{result.score}</div>
+                                <div className={`px-4 py-2 rounded-full font-bold text-sm ${result.assessment.bg} ${result.assessment.color} mb-4`}>
+                                    {result.assessment.level} 类资产 / {result.assessment.text}
+                                </div>
+                                <div className="w-full space-y-2 border-t border-slate-200 pt-4">
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-slate-400">PPP等效购买力时薪</span>
+                                        <span className="font-bold text-emerald-600">¥ {result.metrics.pppHourlyWage}/h</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-slate-400">等效生命总耗时</span>
+                                        <span className="font-bold text-slate-700">{result.metrics.effectiveTime} h</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <footer className="mt-6 text-center text-slate-400 text-[10px] uppercase tracking-widest">
+                        Model optimized for modern labor markets • PuddingTower
+                    </footer>
                 </div>
-                <div className="flex gap-3">
-                  <div className="w-1/2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">公积金(%)</label>
-                    <input type="number" name="housingFundRate" value={formData.housingFundRate} onChange={handleInputChange} className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" />
-                  </div>
-                  <div className="w-1/2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">计薪天数</label>
-                    <input type="number" name="workDaysPerMonth" value={formData.workDaysPerMonth} step="0.01" onChange={handleInputChange} className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">规定工作时长 (小时)</label>
-                  <input type="number" name="workHours" value={formData.workHours} onChange={handleInputChange} className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" />
-                  <p className="text-xs text-gray-400 mt-1">下班时间 - 上班时间</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">通勤总时长 (小时)</label>
-                  <input type="number" name="commuteHours" value={formData.commuteHours} step="0.1" onChange={handleInputChange} className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" />
-                  <p className="text-xs text-gray-400 mt-1">往返总和 (内部算法含1.5倍折损加权)</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">实际摸鱼时长 (小时)</label>
-                  <input type="number" name="slackHours" value={formData.slackHours} step="0.1" onChange={handleInputChange} className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" />
-                  <p className="text-xs text-gray-400 mt-1">带薪排泄/闲聊/发呆</p>
-                </div>
-              </div>
-              
-              <div className="mt-5 flex items-center bg-gray-50 p-3 rounded-lg border border-gray-200">
-                <input type="checkbox" id="earlyStart" name="earlyStart" checked={formData.earlyStart} onChange={handleInputChange} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer" />
-                <label htmlFor="earlyStart" className="ml-3 text-sm font-medium text-gray-700 cursor-pointer select-none">
-                  强制早起惩罚：是否在 8:30 前打卡上班？
-                </label>
-              </div>
-            </section>
+            );
+        }
 
-            {/* Section 2: 定性环境参数 */}
-            <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <h2 className="text-lg font-semibold border-b pb-3 mb-5 flex items-center">
-                <svg className="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                学历机会与环境增益系数
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">学历机会成本系数</label>
-                  <select name="education" value={formData.education} onChange={handleInputChange} className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                    {FACTOR_OPTIONS.education.map(opt => <option key={opt.label} value={opt.value}>{opt.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">物理办公环境</label>
-                  <select name="environment" value={formData.environment} onChange={handleInputChange} className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                    {FACTOR_OPTIONS.environment.map(opt => <option key={opt.label} value={opt.value}>{opt.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">异性环境增益</label>
-                  <select name="oppositeSex" value={formData.oppositeSex} onChange={handleInputChange} className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                    {FACTOR_OPTIONS.oppositeSex.map(opt => <option key={opt.label} value={opt.value}>{opt.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">团队协作氛围</label>
-                  <select name="colleagues" value={formData.colleagues} onChange={handleInputChange} className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                    {FACTOR_OPTIONS.colleagues.map(opt => <option key={opt.label} value={opt.value}>{opt.label}</option>)}
-                  </select>
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">精神内耗与管理压力 (核心维度)</label>
-                  <select name="mentalPressure" value={formData.mentalPressure} onChange={handleInputChange} className="w-full p-2.5 border-2 border-red-100 rounded-lg focus:ring-2 focus:ring-red-400 outline-none bg-red-50 text-red-900">
-                    {FACTOR_OPTIONS.mentalPressure.map(opt => <option key={opt.label} value={opt.value}>{opt.label}</option>)}
-                  </select>
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">所在城市能级 (决定购买力平价 PPP)</label>
-                  <select name="regionTier" value={formData.regionTier} onChange={handleInputChange} className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-emerald-50 border-emerald-100 text-emerald-900">
-                    {FACTOR_OPTIONS.regionTier.map(opt => <option key={opt.label} value={opt.value}>{opt.label}</option>)}
-                  </select>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          {/* Right Column: Output / Dashboard */}
-          <div className="lg:col-span-1">
-            <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-600 sticky top-6">
-              <h2 className="text-gray-500 font-semibold uppercase tracking-wider text-xs mb-2">综合效用指数 (CUI)</h2>
-              
-              <div className="flex items-end mb-4">
-                <span className={`text-5xl font-extrabold ${analysisResult.assessment.color} tracking-tighter`}>
-                  {analysisResult.score}
-                </span>
-              </div>
-
-              {/* Progress Bar Visualization */}
-              <div className="w-full bg-gray-200 rounded-full h-3 mb-2 overflow-hidden">
-                <div 
-                  className={`h-3 rounded-full transition-all duration-500 ${analysisResult.assessment.color.replace('text-', 'bg-')}`} 
-                  style={{ width: `${Math.min((analysisResult.score / 2.5) * 100, 100)}%` }}
-                ></div>
-              </div>
-              <div className="flex justify-between text-xs text-gray-400 font-mono mb-6">
-                <span>0.8 (剥削线)</span>
-                <span>1.5 (爽点)</span>
-                <span>2.0+ (极值)</span>
-              </div>
-
-              <div className={`p-4 rounded-lg mb-6 border ${analysisResult.assessment.bg.replace('bg-', 'border-').replace('100', '200')} ${analysisResult.assessment.bg}`}>
-                <h3 className={`font-bold ${analysisResult.assessment.color} mb-1`}>
-                  {analysisResult.assessment.level}
-                </h3>
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  {analysisResult.assessment.text}
-                </p>
-              </div>
-
-              <div className="space-y-3 pt-4 border-t border-gray-100">
-                <h4 className="text-xs font-bold text-gray-400 uppercase">底层算法拆解</h4>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600">推算税后日薪:</span>
-                  <span className="font-mono font-medium text-blue-600">¥{analysisResult.metrics.actualDailySalary}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm bg-gray-50 p-1 rounded">
-                  <span className="text-gray-600">物理剥夺时薪:</span>
-                  <span className="font-mono font-medium">¥{analysisResult.metrics.actualHourlyWage} /h</span>
-                </div>
-                <div className="flex justify-between items-center text-sm bg-emerald-50 p-1 rounded">
-                  <span className="text-emerald-700 font-semibold">PPP等效购买力时薪:</span>
-                  <span className="font-mono font-bold text-emerald-600">¥{analysisResult.metrics.pppHourlyWage} /h</span>
-                </div>
-                <div className="flex justify-between items-center text-sm mt-2">
-                  <span className="text-gray-600">标量化日收益:</span>
-                  <span className="font-mono font-medium">{analysisResult.metrics.totalReturn} 分</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600">等效生命耗时:</span>
-                  <span className="font-mono font-medium">{analysisResult.metrics.effectiveTime} 小时</span>
-                </div>
-                <div className="text-xs text-gray-400 mt-4 leading-tight">
-                  * 算法提示：此模型严厉惩罚了“高学历内卷”、“单程长途通勤”以及“PUA精神损耗”。
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  );
-}
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
