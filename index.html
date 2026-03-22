@@ -133,9 +133,10 @@
             // 购买力平价时薪：根据当地物价水平折算后的等效购买力
             const pppHourlyWage = actualHourlyWage * regionTier;
 
-            // 1. 收益模块 (Return)
+            // 1. 收益模块 (Return) - [核心重构]：将 PPP 购买力乘数直接作用于总收益计算
+            const pppDailySalary = dailySalary * regionTier;
             const envGain = environment * oppositeSex * colleagues;
-            const totalReturn = dailySalary * envGain;
+            const totalReturn = pppDailySalary * envGain;
 
             // 2. 成本模块 (Cost)
             // 修正：通勤时间的疲劳系数设为 1.5，摸鱼时间全额抵扣（不乘以0.5）
@@ -173,8 +174,12 @@
                 actualDailySalary: dailySalary.toFixed(1),
                 actualHourlyWage: actualHourlyWage.toFixed(1),
                 pppHourlyWage: pppHourlyWage.toFixed(1),
+                envGain: envGain.toFixed(2), // 暴露环境增益供公式渲染
+                education: education.toFixed(1), // 暴露学历系数
+                regionTier: regionTier.toFixed(1), // 暴露PPP系数
                 totalReturn: totalReturn.toFixed(1),
-                effectiveTime: effectiveTime.toFixed(1)
+                effectiveTime: effectiveTime.toFixed(1),
+                totalCost: totalCost.toFixed(1) // 暴露总成本供公式渲染
               }
             };
           }, [formData]);
@@ -351,6 +356,31 @@
                           * 算法提示：此模型严厉惩罚了“高学历内卷”、“单程长途通勤”以及“PUA精神损耗”。
                         </div>
                       </div>
+
+                      {/* [新增功能] 右侧动态算法公式可视化面板 (Dynamic Formula Display) */}
+                      <div className="mt-6 bg-slate-800 rounded-xl p-5 shadow-inner border border-slate-700 text-slate-200">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center">
+                          <svg className="w-4 h-4 mr-1 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                          CUI 实时运算引擎 (公式推演)
+                        </h4>
+                        
+                        <div className="font-mono text-xs space-y-2 overflow-x-auto text-center bg-slate-900 rounded-lg p-3">
+                          <div className="text-emerald-400 border-b border-slate-700 pb-3 mb-3 whitespace-nowrap">
+                            分子(总收益)：[ 税后日薪 ¥{analysisResult.metrics.actualDailySalary} × PPP购买力 {analysisResult.metrics.regionTier} × 环境增益 {analysisResult.metrics.envGain} ]
+                          </div>
+                          <div className="text-rose-400 pt-1 whitespace-nowrap">
+                            分母(总成本)：[ 有效耗时 {analysisResult.metrics.effectiveTime}h × 学历系数 {analysisResult.metrics.education} × 常数 35 ]
+                          </div>
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-slate-700 flex justify-between items-center font-mono text-xs">
+                          <span className="text-slate-400">∑收益 = {analysisResult.metrics.totalReturn}</span>
+                          <span className="text-slate-500 mx-2">÷</span>
+                          <span className="text-slate-400">∑成本 = {analysisResult.metrics.totalCost}</span>
+                          <span className="text-blue-400 font-bold ml-auto text-sm">= {analysisResult.score}</span>
+                        </div>
+                      </div>
+
                     </div>
                   </div>
 
